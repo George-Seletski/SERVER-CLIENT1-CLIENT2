@@ -4,7 +4,7 @@
 
 using namespace std;
 
-int logging_cl(string user, string stg)
+int logging_msgs(string user, string stg)
 {
     int counter = 0;
 
@@ -13,9 +13,9 @@ int logging_cl(string user, string stg)
     sqlite3* db;
     //sqlite3_stmt* stmt;
 
-    sqlite3_open("ev.sqlite", &db);
+    sqlite3_open("message.sqlite", &db);
 
-    string sql = "CREATE TABLE IF NOT EXISTS CLIENTS (id TEXT, "\
+    string sql = "CREATE TABLE IF NOT EXISTS message (id TEXT, "\
         "stage TEXT,"\
         "datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
 
@@ -24,7 +24,7 @@ int logging_cl(string user, string stg)
         cout << "ERROR (sql_E):" << rc << "\n";
     }
     else {
-        string sqlstatement = "INSERT INTO CLIENTS (id,stage) VALUES ('" + user + "','" + stg + "'); ";
+        string sqlstatement = "INSERT INTO message (id,stage) VALUES ('" + user + "','" + stg + "'); ";
 
         rc = sqlite3_exec(db, sqlstatement.c_str(), NULL, NULL, &err);
 

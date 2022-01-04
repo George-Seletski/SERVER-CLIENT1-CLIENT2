@@ -5,11 +5,13 @@
 #include <algorithm>
 #include <locale> 
 #include <codecvt>
-#include "sqlite_database.h"
 #include <iomanip>
+#include "targetver.h"
+#include "sqlite_database.h"
 #include "sqlite_client_db.h"
 #include "logging_cl.h"
-#include "targetver.h"
+#include "sql_messages_db.h"
+
 #define BASE_PATH_PIPE L"\\\\.\\pipe\\"
 #define SIZE_BUFFER 2048
 
@@ -19,6 +21,7 @@
 
 int rc;
 int rc_client;
+int rc_messages;
 
 DWORD WINAPI Server(LPVOID);
 void logging(std::wstring);
@@ -54,19 +57,6 @@ int main(int argc, char* params[])
 		return rc;
 	}
 
-	//CLIENT_DB
-	rc_client = sqlite3_open(DB_FILE_NAME_C, &db_c);        //database for clients
-	if (rc_client) {
-		std::cout << "Error code (client db): " << rc_client << std::endl;
-		return rc_client;
-	}
-	rc_client = create_tables_c();									//creating database for clients
-	rc_client = prepare_statements_c();
-
-	if (rc_client) {
-		std::cout << "Error code (client db): " << rc_client << std::endl;
-		return rc_client;
-	}
 
 	std::string tmp_s = "Server";
 	std::string tmp_s2 = "Started";
@@ -188,14 +178,16 @@ DWORD WINAPI Server(LPVOID hPipe)
 			tmp.assign(L"User ");
 			tmp.append(username);
 			tmp.append(L" disconnect");
-			logging(tmp);
 
-			//tmp_s = "Disconnected";
-			//logging_cl(cnvrt(username), tmp_s);
+			logging(tmp);
 
 			tmp.clear();
 			std::wcout << "User " << username << " disconnect\n";
 			DisconnectNamedPipe(hPipe);
+
+			tmp_s = "Disconnected";
+			logging_cl(cnvrt(username), tmp_s);
+
 			break;
 		}
 		else
@@ -204,11 +196,17 @@ DWORD WINAPI Server(LPVOID hPipe)
 			tmp.append(L": ");
 			tmp.append(strRequest);
 			tmp.append(L"  ::  ");
+
 			std::wcout << username << ": " << strRequest << "  :: ";
+
 			tmp_str.assign(L"got message from");
 			tmp_str.append(username);
+
 			logging_cl("Server", cnvrt(tmp_str));
+
 			tmp_str.clear();
+
+			logging_msgs(cnvrt(username), cnvrt(strRequest));
 		}
 
 		isSucsses = WriteFile(
@@ -245,10 +243,10 @@ DWORD WINAPI Server(LPVOID hPipe)
 		}
 
 	}
-	std::string tmp_s2 = "Finished";
+	//std::string tmp_s2 = "Finished";
 
 	logging(L"Server is finished.");
-	logging_cl(cnvrt(username), tmp_s2);
+	//logging_cl(cnvrt(username), tmp_s2);
 	logging_cl("Server", "Finished");
 	if (strRequest)
 		delete[] strRequest;
